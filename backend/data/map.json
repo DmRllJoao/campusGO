@@ -1,0 +1,81 @@
+{
+  "nodes": {
+    "n1": {
+      "id": "n1",
+      "name": "Entrada Principal",
+      "x": 50,
+      "y": 300
+    },
+    "n2": {
+      "id": "n2",
+      "name": "Corredor A",
+      "x": 200,
+      "y": 300
+    },
+    "n3": {
+      "id": "n3",
+      "name": "Sala 101",
+      "x": 320,
+      "y": 220
+    },
+    "n4": {
+      "id": "n4",
+      "name": "Sala 102",
+      "x": 320,
+      "y": 380
+    },
+    "n5": {
+      "id": "n5",
+      "name": "Biblioteca",
+      "x": 500,
+      "y": 300
+    },
+    "n6": {
+      "id": "n6",
+      "name": "Cantina",
+      "x": 500,
+      "y": 120
+    }
+  },
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "w": 150
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "w": 130
+    },
+    {
+      "from": "n2",
+      "to": "n4",
+      "w": 130
+    },
+    {
+      "from": "n2",
+      "to": "n5",
+      "w": 300
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "w": 200
+    }
+  ],
+  "pois": [
+    {
+      "id": "p_bib",
+      "label": "Biblioteca",
+      "node": "n5",
+      "type": "biblioteca"
+    },
+    {
+      "id": "p_can",
+      "label": "Cantina",
+      "node": "n6",
+      "type": "cantina"
+    }
+  ]
+}
