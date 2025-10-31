@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Campus Go - Package ready to run
 
 Este pacote contém uma versão inicial do *Campus Go*:
@@ -33,3 +34,6 @@ Vite normalmente abre em http://localhost:5173
 - Substitua `backend/data/map.json` pelo mapa do seu campus (nodes + edges).
 - Substitua `backend/data/students.json` com dados reais ou integre à API da instituição.
 - A planta baixa SVG enviada foi copiada para `frontend/src/assets/plant.svg`.
+=======
+# campusGO
+>>>>>>> 1fb0afca58122ad49d073af69e675d215ca5f253
