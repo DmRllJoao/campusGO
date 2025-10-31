@@ -65,25 +65,35 @@ def student_classes(matricula):
     if not aluno:
         return jsonify({"erro": "Aluno não encontrado"}), 404
 
-    aulas = aluno.get("schedule", {})
     nome = aluno.get("name", "Aluno")
 
-    # Organiza as aulas de forma mais legível
+    # Tenta pegar aulas_da_semana ou schedule (caso antigo)
+    aulas = aluno.get("aulas_da_semana") or aluno.get("schedule", {})
+
     aulas_formatadas = []
-    for data, materias in aulas.items():
-        for materia in materias:
-            aulas_formatadas.append({
-                "data": data,
-                "disciplina": materia["subject"],
-                "horário": materia["time"],
-                "sala": materia["room_node"]
-            })
+
+    # Caso o formato antigo ainda esteja em uso (dict de datas)
+    if isinstance(aulas, dict):
+        for data, materias in aulas.items():
+            for materia in materias:
+                aulas_formatadas.append({
+                    "data": data,
+                    "disciplina": materia.get("subject"),
+                    "horário": materia.get("time"),
+                    "sala": materia.get("room_node"),
+                    "sala_id": materia.get("room_node")
+                })
+
+    # Caso seja o novo formato (lista pronta)
+    elif isinstance(aulas, list):
+        aulas_formatadas = aulas
 
     return jsonify({
         "matrícula": matricula,
         "nome": nome,
         "aulas_da_semana": aulas_formatadas
     })
+
 
 
 @app.route('/login', methods=['POST'])

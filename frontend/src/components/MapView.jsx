@@ -16,17 +16,30 @@ export default function MapView({ user, mode }) {
   const startPan = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    fetch("http://localhost:5000/map-data")
-      .then((r) => r.json())
-      .then(setMapData);
+  fetch("http://localhost:5000/map-data")
+    .then((r) => r.json())
+    .then(setMapData);
 
-    if (mode === "student" && user?.matricula) {
-      fetch(`http://localhost:5000/classes/${user.matricula}`)
-        .then((r) => r.json())
-        .then((j) => setStudentSchedule(j.aulas_da_semana || []))
-        .catch(() => setStudentSchedule([]));
-    }
-  }, [mode, user]);
+  if (mode === "student" && user?.matricula) {
+    fetch(`http://localhost:5000/classes/${user.matricula}`)
+      .then((r) => r.json())
+      .then((j) => {
+        console.log("📘 Retorno do backend /classes:", j);
+        if (j.aulas_da_semana && j.aulas_da_semana.length > 0) {
+          setStudentSchedule(j.aulas_da_semana);
+        } else {
+          console.warn("⚠️ Nenhuma aula encontrada.");
+          setStudentSchedule([]);
+        }
+      })
+      .catch((err) => {
+        console.error("❌ Erro ao buscar aulas:", err);
+        setStudentSchedule([]);
+      });
+  }
+}, [mode, user]);
+
+
 
   async function requestRoute(destNode) {
     const origin = "n1";
@@ -227,13 +240,19 @@ export default function MapView({ user, mode }) {
       {studentSchedule.map((aula, i) => (
         <li
           key={i}
-          onClick={() => requestRoute(aula.sala_id)}
+          onClick={() => {
+            setSelected({
+              id: aula.sala_id,
+              name: aula.sala
+            });
+            requestRoute(aula.sala_id);
+          }}
           className="schedule-item"
           title={`Clique para ver o caminho até ${aula.sala}`}
         >
           <div className="aula-header">
             <strong>{aula.disciplina}</strong>
-            <span className="dia">{aula.data}</span>
+            <span className="dia">{aula.dia_semana}</span>
           </div>
           <div className="aula-body">
             <span>{aula.horário}</span> — <b>{aula.sala}</b>
@@ -243,6 +262,7 @@ export default function MapView({ user, mode }) {
     </ul>
   </div>
 )}
+
 
       </div>
     </div>
