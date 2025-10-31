@@ -23,8 +23,8 @@ export default function MapView({ user, mode }) {
     if (mode === "student" && user?.matricula) {
       fetch(`http://localhost:5000/classes/${user.matricula}`)
         .then((r) => r.json())
-        .then((j) => setStudentSchedule(j.schedule || {}))
-        .catch(() => setStudentSchedule(null));
+        .then((j) => setStudentSchedule(j.aulas_da_semana || []))
+        .catch(() => setStudentSchedule([]));
     }
   }, [mode, user]);
 
@@ -88,8 +88,8 @@ export default function MapView({ user, mode }) {
       {/* MENU LATERAL */}
       <aside className={`sidebar ${menuOpen ? "visible" : ""}`}>
         <img
-          src="/logo-campusgo_curto.png"
-          alt="Campus Go"
+          src="/Logo-branca-transparente.png"
+          alt="CampusGO"
           className="logo"
         />
         <nav>
@@ -102,14 +102,17 @@ export default function MapView({ user, mode }) {
       </aside>
 
       {/* TOPO */}
-      <header className="topbar">
+      <header className={`topbar ${menuOpen ? "shifted" : ""}`}>
         <div className="topbar-content">
           <div className="user-info">
             👋 Olá, {user?.name || "Visitante"}{" "}
             {user?.matricula ? `(${user.matricula})` : ""}
           </div>
           <div className="search-bar">
-            <input type="text" placeholder="Pesquise o local que você procura..." />
+            <input
+              type="text"
+              placeholder="Pesquise o local que você procura..."
+            />
             <button>🔍</button>
           </div>
         </div>
@@ -134,7 +137,13 @@ export default function MapView({ user, mode }) {
             transition: isPanning.current ? "none" : "transform 0.1s ease",
           }}
         >
-          <rect x={minX} y={minY} width={maxX - minX} height={maxY - minY} fill="#f7fbff" />
+          <rect
+            x={minX}
+            y={minY}
+            width={maxX - minX}
+            height={maxY - minY}
+            fill="#f7fbff"
+          />
 
           {mapData.edges.map((e, i) => {
             const a = mapData.nodes[e.from];
@@ -197,7 +206,10 @@ export default function MapView({ user, mode }) {
               </div>
               <div>ID: {selected.id}</div>
               <div style={{ marginTop: 8 }}>
-                <button className="btn primary" onClick={() => requestRoute(selected.id)}>
+                <button
+                  className="btn primary"
+                  onClick={() => requestRoute(selected.id)}
+                >
                   Traçar rota até aqui
                 </button>
               </div>
@@ -206,6 +218,32 @@ export default function MapView({ user, mode }) {
             <div>Clique em um ponto do mapa</div>
           )}
         </div>
+
+        {/* CRONOGRAMA */}
+        {mode === "student" && studentSchedule && studentSchedule.length > 0 && (
+  <div className="schedule-panel">
+    <h3>📅 Aulas da Semana</h3>
+    <ul>
+      {studentSchedule.map((aula, i) => (
+        <li
+          key={i}
+          onClick={() => requestRoute(aula.sala_id)}
+          className="schedule-item"
+          title={`Clique para ver o caminho até ${aula.sala}`}
+        >
+          <div className="aula-header">
+            <strong>{aula.disciplina}</strong>
+            <span className="dia">{aula.data}</span>
+          </div>
+          <div className="aula-body">
+            <span>{aula.horário}</span> — <b>{aula.sala}</b>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
       </div>
     </div>
   );

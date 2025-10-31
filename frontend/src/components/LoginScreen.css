@@ -1,0 +1,167 @@
+/* ===== LOGIN SCREEN ===== */
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background: #dcdcdc;
+  animation: fadeInLogin 0.8s ease forwards;
+}
+
+/* ===== CARTÃO DE LOGIN ===== */
+.login-card {
+  width: 400px;
+  background: #dcdcdc;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 40px 50px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  color: white;
+  backdrop-filter: blur(12px);
+  animation: slideUp 0.9s ease forwards;
+}
+
+/* ===== LOGO ===== */
+.logo img {
+  width: 250px;
+  height: auto;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.3));
+}
+
+/* ===== INPUTS ===== */
+.input-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.input-group input {
+  width: 220px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  outline: none;
+  background-color: #ffffff;
+  color: #333;
+}
+
+/* ===== BOTÕES ===== */
+.btn-entrar {
+  background-color: #024221;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.btn-entrar:hover {
+  background-color: #07663a;
+  transform: translateY(-2px);
+}
+
+/* Visitante */
+.btn-visitor {
+  background-color: #f4a024;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  padding: 12px 80px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.btn-visitor:hover {
+  background-color: #e39015;
+  transform: translateY(-2px);
+}
+
+/* ===== ERRO E FOOTER ===== */
+.error {
+  color: #ff4d4f;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.foot {
+  margin-top: 25px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* ===== ANIMAÇÕES ===== */
+@keyframes fadeInLogin {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 480px) {
+  .login-card {
+    width: 85%;
+    padding: 30px;
+  }
+
+  .input-group {
+    flex-direction: column;
+  }
+
+  .btn-visitor {
+    padding: 12px 40px;
+  }
+}
+/* ===== LOADER DENTRO DO BOTÃO ===== */
+.btn-entrar.loading {
+  background-color: #024221;
+  cursor: wait;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== FEEDBACK DE BOTÃO DESATIVADO ===== */
+.btn-entrar:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}

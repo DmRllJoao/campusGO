@@ -61,18 +61,49 @@ def map_data():
 
 @app.route('/classes/<matricula>')
 def student_classes(matricula):
-    s = STUDENTS.get(matricula)
-    if not s:
-        return jsonify({"error":"Aluno não encontrado"}), 404
-    return jsonify(s)
+    aluno = STUDENTS.get(matricula)
+    if not aluno:
+        return jsonify({"erro": "Aluno não encontrado"}), 404
+
+    aulas = aluno.get("schedule", {})
+    nome = aluno.get("name", "Aluno")
+
+    # Organiza as aulas de forma mais legível
+    aulas_formatadas = []
+    for data, materias in aulas.items():
+        for materia in materias:
+            aulas_formatadas.append({
+                "data": data,
+                "disciplina": materia["subject"],
+                "horário": materia["time"],
+                "sala": materia["room_node"]
+            })
+
+    return jsonify({
+        "matrícula": matricula,
+        "nome": nome,
+        "aulas_da_semana": aulas_formatadas
+    })
+
 
 @app.route('/login', methods=['POST'])
 def login():
     body = request.json
-    matricula = body.get("matricula")
-    if matricula in STUDENTS:
-        return jsonify({"ok": True, "matricula": matricula, "name": STUDENTS[matricula]["name"]})
-    return jsonify({"ok": False, "error": "Matrícula não encontrada"}), 401
+    matricula = body.get("matricula", "").strip()
+
+    if not matricula:
+        return jsonify({"error": "Matrícula não informada"}), 400
+
+    aluno = STUDENTS.get(matricula)
+    if aluno:
+        return jsonify({
+            "matricula": matricula,
+            "name": aluno.get("name"),
+            "role": aluno.get("role", "student")
+        })
+
+    return jsonify({"error": "Matrícula não encontrada"}), 401
+
 
 @app.route('/route')
 def route():
