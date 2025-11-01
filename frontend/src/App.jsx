@@ -27,10 +27,17 @@ export default function App() {
     }, 1000);
   };
 
-  if (showSplash) {
-  return <SplashScreen onEnter={() => setShowSplash(false)} />;
-}
+  // 🧩 Função de Logout
+  const handleLogout = () => {
+    setUser(null);         // remove usuário atual
+    setMode("visitor");    // volta para modo visitante
+    setShowSplash(true);   // retorna à tela inicial
+  };
 
+  // Splash inicial
+  if (showSplash) {
+    return <SplashScreen onEnter={() => setShowSplash(false)} />;
+  }
 
   return (
     <div className="app">
@@ -43,7 +50,8 @@ export default function App() {
       ) : (
         <div className="container">
           <main className="main">
-            <MapView user={user} mode={mode} />
+            {/* 🔹 Passamos o handleLogout para o MapView */}
+            <MapView user={user} mode={mode} onLogout={handleLogout} />
           </main>
         </div>
       )}

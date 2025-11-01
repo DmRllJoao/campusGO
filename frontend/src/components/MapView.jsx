@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./MapView.css";
 
-export default function MapView({ user, mode }) {
+
+export default function MapView({ user, mode, onLogout }) {
+
   const [mapData, setMapData] = useState(null);
   const [selected, setSelected] = useState(null);
   const [path, setPath] = useState([]);
   const [studentSchedule, setStudentSchedule] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showPresencePopup, setShowPresencePopup] = useState(false);
 
   // Zoom e Pan
   const [zoom, setZoom] = useState(1);
@@ -74,6 +77,36 @@ export default function MapView({ user, mode }) {
   function handleMouseUp() {
     isPanning.current = false;
   }
+  // 💤 Detecta inatividade e pergunta se o usuário ainda está presente
+useEffect(() => {
+  let inactivityTimer;
+  let warningTimer;
+
+  const handleActivity = () => {
+    clearTimeout(inactivityTimer);
+    clearTimeout(warningTimer);
+    inactivityTimer = setTimeout(() => {
+      setShowPresencePopup(true);
+      // Se o usuário não responder em 15s → volta automaticamente
+      warningTimer = setTimeout(() => {
+        setShowPresencePopup(false);
+        onLogout();
+      }, 15000);
+    }, 30000); // 30 segundos sem atividade
+  };
+
+  const events = ["mousemove", "keydown", "click", "wheel"];
+  events.forEach((ev) => window.addEventListener(ev, handleActivity));
+
+  handleActivity();
+
+  return () => {
+    events.forEach((ev) => window.removeEventListener(ev, handleActivity));
+    clearTimeout(inactivityTimer);
+    clearTimeout(warningTimer);
+  };
+}, [onLogout]);
+
 
   if (!mapData) return <div className="loading">Carregando mapa...</div>;
 
@@ -86,6 +119,8 @@ export default function MapView({ user, mode }) {
   const maxY = Math.max(...allY) + 50;
   const vb = `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
 
+
+  
   return (
     <div className="map-container">
       {/* BOTÃO HAMBÚRGUER */}
@@ -128,6 +163,10 @@ export default function MapView({ user, mode }) {
             />
             <button>🔍</button>
           </div>
+          <button className="logout-btn" onClick={onLogout}>
+  🚪 Sair
+</button>
+
         </div>
       </header>
 
@@ -265,6 +304,35 @@ export default function MapView({ user, mode }) {
 
 
       </div>
+      {/* POPUP DE PRESENÇA */}
+{showPresencePopup && (
+  <div className="presence-popup">
+    <div className="presence-box">
+      <h3>👋 Tem alguém aí?</h3>
+      <p>O sistema voltará à tela inicial em 15 segundos se não houver resposta.</p>
+      <div className="presence-buttons">
+        <button
+          className="btn stay"
+          onClick={() => {
+            setShowPresencePopup(false);
+          }}
+        >
+          ✅ Estou aqui
+        </button>
+        <button
+          className="btn exit"
+          onClick={() => {
+            setShowPresencePopup(false);
+            onLogout();
+          }}
+        >
+          🚪 Sair agora
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

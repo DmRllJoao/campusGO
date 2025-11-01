@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import "./LoginScreen.css";
+import { useEffect } from "react";
+
 
 export default function LoginScreen({ onLogin, onVisitor }) {
   const [matricula, setMatricula] = useState("");
@@ -15,7 +17,7 @@ export default function LoginScreen({ onLogin, onVisitor }) {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/login", {
+      const res = await fetch("http://127.0.0.1:5000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ matricula }),
@@ -31,6 +33,14 @@ export default function LoginScreen({ onLogin, onVisitor }) {
     }
     setLoading(false);
   }
+  // Retorna à tela Splash se ficar 20s parado
+useEffect(() => {
+  const timer = setTimeout(() => {
+    window.location.reload(); // Simula o retorno à tela Splash
+  }, 20000);
+
+  return () => clearTimeout(timer);
+}, []);
 
   return (
     <div className="login-screen">

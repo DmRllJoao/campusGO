@@ -93,39 +93,91 @@
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* Centraliza tudo */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   transition: all 0.4s ease;
   z-index: 1100;
 }
+
 .topbar.shifted {
   left: 260px;
   width: calc(100% - 260px);
 }
+
 .topbar-content {
-  width: 100%;
-  max-width: 1200px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 40px;
+  justify-content: center; /* Centraliza o grupo completo */
+  gap: 25px; /* Espaçamento entre elementos */
+  max-width: 950px;
+  width: 100%;
 }
+
+/* ===== SAUDAÇÃO ===== */
 .user-info {
   color: #0b2545;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
+  white-space: nowrap;
 }
+
+/* ===== BARRA DE PESQUISA ===== */
 .search-bar {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #ffffff;
   border-radius: 40px;
-  padding: 5px 15px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  padding: 8px 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   flex: 1;
-  margin: 0 40px;
-  max-width: 500px;
+  max-width: 420px;
+  transition: all 0.3s ease;
 }
+
+.search-bar input {
+  border: none;
+  outline: none;
+  padding: 8px 10px;
+  width: 100%;
+  font-size: 14px;
+  color: #333;
+  background: transparent;
+}
+
+.search-bar button {
+  background: #024221;
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-bar button:hover {
+  background: #037b42;
+}
+
+/* ===== BOTÃO SAIR ===== */
+.logout-btn {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 8px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: #d9363e;
+  transform: translateY(-2px);
+}
+
 
 /* ===== MAPA ===== */
 .map-wrapper {
@@ -196,7 +248,6 @@
   max-width: 1200px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 60px; /* puxamos um pouco mais para a direita */
 }
 .user-info {
@@ -310,4 +361,103 @@
 .btn.primary:hover {
   background: #009e7c;
   transform: translateY(-2px);
+}
+
+/* ===== BOTÃO SAIR ===== */
+.logout-btn {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 8px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.logout-btn:hover {
+  background: #d9363e;
+  transform: translateY(-2px);
+}
+
+/* ===== POPUP DE PRESENÇA ===== */
+.presence-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.presence-box {
+  background: white;
+  color: #024221;
+  border-radius: 14px;
+  padding: 25px 35px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  width: 340px;
+  animation: fadeIn 0.3s ease;
+}
+
+.presence-box h3 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.presence-box p {
+  font-size: 14px;
+  color: #444;
+  margin: 10px 0 20px 0;
+}
+
+.presence-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.presence-buttons .btn {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.presence-buttons .btn.stay {
+  background: #00b894;
+  color: white;
+}
+
+.presence-buttons .btn.stay:hover {
+  background: #009e7c;
+}
+
+.presence-buttons .btn.exit {
+  background: #ff4d4f;
+  color: white;
+}
+
+.presence-buttons .btn.exit:hover {
+  background: #d9363e;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
