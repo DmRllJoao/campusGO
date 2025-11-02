@@ -1,36 +1,41 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 import json, os, heapq
 
 # ========================
-# CONFIGURAÇÃO INICIAL
+# 🔧 CONFIGURAÇÃO INICIAL
 # ========================
 BASE_DIR = os.path.dirname(__file__)
 app = Flask(__name__)
 
-# ✅ Configuração do CORS — permite o React (localhost:5173)
+# ✅ Permite o frontend (React) acessar a API
 CORS(
     app,
     origins=["http://localhost:5173"],
-    methods=["GET", "POST", "OPTIONS"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type"]
 )
 
-# Banco de dados SQLite
+# Banco SQLite
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(BASE_DIR, 'campusgo.db')}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
+
 # ========================
-# MODELOS (TABELAS)
+# 📦 MODELOS DO BANCO
 # ========================
+
+# 👨‍🎓 Alunos
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     matricula = db.Column(db.String(50), unique=True, nullable=False)
     nome = db.Column(db.String(120), nullable=False)
     aulas = db.relationship("Aula", backref="student", lazy=True)
 
+# 📚 Aulas
 class Aula(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("student.id"))
@@ -41,8 +46,22 @@ class Aula(db.Model):
     data = db.Column(db.String(20))
     dia_semana = db.Column(db.String(30))
 
+# 👑 Administradores
+class Admin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    nome = db.Column(db.String(120), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
 # ========================
-# MAPA / GRAFO
+# 🗺️ MAPA / GRAFO
 # ========================
 with open(os.path.join(BASE_DIR, "data", "map.json"), "r", encoding="utf-8") as f:
     MAP = json.load(f)
@@ -53,14 +72,17 @@ for e in MAP["edges"]:
     GRAPH[e["to"]].append((e["from"], e.get("w", 1)))
 
 def shortest_path(start, goal):
+    """Algoritmo de Dijkstra — calcula o caminho mais curto."""
     dist = {n: float("inf") for n in GRAPH}
     prev = {n: None for n in GRAPH}
     dist[start] = 0
     pq = [(0, start)]
     while pq:
         d, u = heapq.heappop(pq)
-        if u == goal: break
-        if d > dist[u]: continue
+        if u == goal:
+            break
+        if d > dist[u]:
+            continue
         for v, w in GRAPH[u]:
             nd = d + w
             if nd < dist[v]:
@@ -76,10 +98,10 @@ def shortest_path(start, goal):
     path.reverse()
     return [{"id": n, **MAP["nodes"][n]} for n in path]
 
-# ========================
-# ROTAS PRINCIPAIS
-# ========================
 
+# ========================
+# 🌐 ROTAS PRINCIPAIS
+# ========================
 @app.route('/')
 def home():
     return "✅ Backend CampusGO rodando com banco SQLite!"
@@ -96,55 +118,143 @@ def route():
         return jsonify({"error": "origem/destino inválido"}), 400
     return jsonify({"path": shortest_path(origin, dest)})
 
+
 # ========================
-# SUPORTE GLOBAL A CORS / OPTIONS
+# ⚙️ SUPORTE GLOBAL A CORS / OPTIONS
 # ========================
 @app.before_request
 def handle_options_request():
     if request.method == "OPTIONS":
         return '', 200
 
+
 # ========================
-# ROTA DE LOGIN
+# 🔐 LOGIN (ADMIN + ALUNO)
 # ========================
 @app.route('/login', methods=['POST'])
 def login():
     body = request.json
-    print("📩 Requisição recebida no /login:", body)
     matricula = body.get("matricula", "").strip()
+    senha = body.get("senha", "").strip() if body.get("senha") else ""
 
     if not matricula:
-        return jsonify({"error": "Matrícula não informada"}), 400
+        return jsonify({"error": "Matrícula ou usuário não informado"}), 400
 
+    # 👑 LOGIN DE ADMINISTRADOR
+    admin = Admin.query.filter_by(username=matricula).first()
+    if admin:
+        if senha and admin.check_password(senha):
+            role = "master" if admin.username == "admin" else "admin"
+            return jsonify({
+                "matricula": admin.username,
+                "name": admin.nome,
+                "role": role
+            }), 200
+        elif not senha:
+            return jsonify({"error": "Senha não informada"}), 401
+        else:
+            return jsonify({"error": "Senha incorreta"}), 401
+
+    # 👨‍🎓 LOGIN DE ALUNO
     aluno = Student.query.filter_by(matricula=matricula).first()
     if aluno:
-        return jsonify({"matricula": aluno.matricula, "name": aluno.nome})
-    return jsonify({"error": "Matrícula não encontrada"}), 401
+        return jsonify({
+            "matricula": aluno.matricula,
+            "name": aluno.nome,
+            "role": "student"
+        }), 200
+
+    return jsonify({"error": "Usuário não encontrado"}), 401
+
 
 # ========================
-# ROTAS DE ALUNOS (CRUD)
+# 🧾 CHECAGEM DE ADMIN
 # ========================
+@app.route("/admins/check", methods=["GET"])
+def check_admin():
+    username = request.args.get("username")
+    admin = Admin.query.filter_by(username=username).first()
+    if admin:
+        return jsonify({"valid": True, "nome": admin.nome})
+    return jsonify({"valid": False}), 404
+
+
+# ========================
+# 👑 CRUD DE ADMINISTRADORES
+# ========================
+
+@app.route("/admins", methods=["GET"])
+def list_admins():
+    admins = Admin.query.all()
+    return jsonify([{"id": a.id, "username": a.username, "nome": a.nome} for a in admins])
+
+@app.route("/admins", methods=["POST"])
+def create_admin():
+    """Cria um novo administrador."""
+    data = request.json
+    username = data.get("username")
+    nome = data.get("nome")
+    senha = data.get("senha")
+
+    if not all([username, nome, senha]):
+        return jsonify({"error": "Campos obrigatórios: username, nome e senha"}), 400
+
+    if Admin.query.filter_by(username=username).first():
+        return jsonify({"error": "Administrador já existe"}), 400
+
+    novo = Admin(username=username, nome=nome)
+    novo.set_password(senha)
+    db.session.add(novo)
+    db.session.commit()
+
+    # 🟢 Retorna o ID real criado
+    return jsonify({
+        "message": f"Administrador '{username}' criado com sucesso",
+        "id": novo.id
+    }), 201
+
+@app.route("/admins/<int:id>", methods=["PUT"])
+def update_admin(id):
+    """Atualiza nome ou senha de um administrador."""
+    admin = Admin.query.get(id)
+    if not admin:
+        return jsonify({"error": "Administrador não encontrado"}), 404
+
+    data = request.json
+    admin.nome = data.get("nome", admin.nome)
+    if data.get("senha"):
+        admin.set_password(data["senha"])
+
+    db.session.commit()
+    return jsonify({"message": "Administrador atualizado com sucesso", "id": admin.id}), 200
+
+@app.route("/admins/<int:id>", methods=["DELETE"])
+def delete_admin(id):
+    """Remove um administrador (exceto o master)."""
+    admin = Admin.query.get(id)
+    if not admin:
+        return jsonify({"error": "Administrador não encontrado"}), 404
+
+    if admin.username == "admin":
+        return jsonify({"error": "Não é permitido remover o admin master."}), 403
+
+    total_admins = Admin.query.count()
+    if total_admins == 1:
+        return jsonify({"error": "Não é possível remover o único administrador existente"}), 400
+
+    db.session.delete(admin)
+    db.session.commit()
+    return jsonify({"message": "Administrador removido com sucesso"}), 200
+
+
+# ========================
+# 👨‍🎓 CRUD DE ALUNOS
+# ========================
+
 @app.route("/students", methods=["GET"])
 def get_students():
     students = Student.query.all()
-    return jsonify([{
-        "matricula": s.matricula,
-        "name": s.nome
-    } for s in students])
-
-@app.route("/students/<matricula>", methods=["GET"])
-def get_student(matricula):
-    s = Student.query.filter_by(matricula=matricula).first()
-    if not s:
-        return jsonify({"error": "Aluno não encontrado"}), 404
-    aulas = [{"id": a.id, "disciplina": a.disciplina, "horario": a.horario,
-              "sala": a.sala, "sala_id": a.sala_id,
-              "data": a.data, "dia_semana": a.dia_semana} for a in s.aulas]
-    return jsonify({
-        "matricula": s.matricula,
-        "name": s.nome,
-        "aulas_da_semana": aulas
-    })
+    return jsonify([{"id": s.id, "matricula": s.matricula, "name": s.nome} for s in students])
 
 @app.route("/students", methods=["POST"])
 def add_student():
@@ -153,32 +263,15 @@ def add_student():
         return jsonify({"error": "Dados inválidos"}), 400
     if Student.query.filter_by(matricula=data["matricula"]).first():
         return jsonify({"error": "Matrícula já existe"}), 400
+
     new_s = Student(matricula=data["matricula"], nome=data["name"])
     db.session.add(new_s)
     db.session.commit()
-    return jsonify({"message": "Aluno adicionado com sucesso"}), 201
+    return jsonify({"message": "Aluno adicionado com sucesso", "id": new_s.id}), 201
 
-@app.route("/students/<matricula>", methods=["PUT"])
-def update_student(matricula):
-    s = Student.query.filter_by(matricula=matricula).first()
-    if not s:
-        return jsonify({"error": "Aluno não encontrado"}), 404
-    data = request.json
-    s.nome = data.get("name", s.nome)
-    db.session.commit()
-    return jsonify({"message": "Aluno atualizado"})
-
-@app.route("/students/<matricula>", methods=["DELETE"])
-def delete_student(matricula):
-    s = Student.query.filter_by(matricula=matricula).first()
-    if not s:
-        return jsonify({"error": "Aluno não encontrado"}), 404
-    db.session.delete(s)
-    db.session.commit()
-    return jsonify({"message": "Aluno removido"})
 
 # ========================
-# ROTAS DE AULAS
+# 📚 CRUD DE AULAS
 # ========================
 @app.route("/aulas", methods=["GET"])
 def get_aulas():
@@ -203,6 +296,7 @@ def add_aula():
     aluno = Student.query.filter_by(matricula=data["matricula"]).first()
     if not aluno:
         return jsonify({"error": "Aluno não existe"}), 404
+
     new_a = Aula(
         student_id=aluno.id,
         disciplina=data["disciplina"],
@@ -214,69 +308,42 @@ def add_aula():
     )
     db.session.add(new_a)
     db.session.commit()
-    return jsonify({"message": "Aula adicionada"}), 201
+    return jsonify({"message": "Aula adicionada com sucesso", "id": new_a.id}), 201
 
-@app.route("/aulas/<int:id>", methods=["DELETE"])
-def delete_aula(id):
-    a = Aula.query.get(id)
-    if not a:
-        return jsonify({"error": "Aula não encontrada"}), 404
-    db.session.delete(a)
-    db.session.commit()
-    return jsonify({"message": "Aula removida"})
 
 # ========================
-# ROTA /CLASSES/<MATRICULA>
-# ========================
-@app.route('/classes/<matricula>')
-def student_classes(matricula):
-    aluno = Student.query.filter_by(matricula=matricula).first()
-    if not aluno:
-        return jsonify({"erro": "Aluno não encontrado"}), 404
-
-    aulas = Aula.query.filter_by(student_id=aluno.id).all()
-    aulas_formatadas = [
-        {
-            "disciplina": a.disciplina,
-            "horário": a.horario,
-            "sala": a.sala,
-            "sala_id": a.sala_id,
-            "data": a.data,
-            "dia_semana": a.dia_semana
-        } for a in aulas
-    ]
-
-    return jsonify({
-        "matrícula": matricula,
-        "nome": aluno.nome,
-        "aulas_da_semana": aulas_formatadas
-    })
-
-# ========================
-# CRIAÇÃO E POPULAÇÃO DO BANCO
+# 🧱 CRIAÇÃO INICIAL DO BANCO
 # ========================
 with app.app_context():
     db.create_all()
 
+    # Cria o admin master se ainda não existir
+    if not Admin.query.filter_by(username="admin").first():
+        print("👑 Criando admin master...")
+        master = Admin(username="admin", nome="Administrador Geral")
+        master.set_password("admin123")
+        db.session.add(master)
+        db.session.commit()
+        print("✅ Admin master criado (login: admin / senha: admin123)")
+
+    # Adiciona aluno e aulas de exemplo
     if not Student.query.first():
-        print("🧠 Inserindo dados de exemplo...")
         aluno = Student(matricula="1-2024233319", nome="Francisca Camilly Gomes de Oliveira")
         db.session.add(aluno)
         db.session.commit()
 
         aulas = [
-            Aula(student_id=aluno.id, disciplina="Programação Web", horario="08:00-09:40", sala="Laboratório 1", sala_id="n3", data="2025-10-27", dia_semana="Segunda-feira"),
-            Aula(student_id=aluno.id, disciplina="Redes de Computadores", horario="10:00-11:40", sala="Laboratório de Redes", sala_id="n4", data="2025-10-28", dia_semana="Terça-feira"),
-            Aula(student_id=aluno.id, disciplina="Banco de Dados", horario="08:00-09:40", sala="Sala 101", sala_id="n5", data="2025-10-29", dia_semana="Quarta-feira"),
-            Aula(student_id=aluno.id, disciplina="Engenharia de Software", horario="10:00-11:40", sala="Sala 201", sala_id="n6", data="2025-10-30", dia_semana="Quinta-feira"),
-            Aula(student_id=aluno.id, disciplina="Arquitetura de Computadores", horario="08:00-09:40", sala="Sala 202", sala_id="n7", data="2025-10-31", dia_semana="Sexta-feira")
+            Aula(student_id=aluno.id, disciplina="Programação Web", horario="08:00-09:40",
+                 sala="Laboratório 1", sala_id="n3", data="2025-10-27", dia_semana="Segunda-feira"),
+            Aula(student_id=aluno.id, disciplina="Redes de Computadores", horario="10:00-11:40",
+                 sala="Laboratório de Redes", sala_id="n4", data="2025-10-28", dia_semana="Terça-feira")
         ]
         db.session.add_all(aulas)
         db.session.commit()
-        print("✅ Banco criado e populado com dados iniciais.")
+
 
 # ========================
-# EXECUÇÃO
+# ▶️ EXECUÇÃO
 # ========================
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

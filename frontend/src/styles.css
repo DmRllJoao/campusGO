@@ -25,7 +25,7 @@ body,html,#root{
 
 
 
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:transparent}
+
 .brand{font-weight:700;font-size:22px;color:#063a7a}
 .user{color:var(--muted)}
 
